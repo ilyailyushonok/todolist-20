@@ -21,10 +21,28 @@ export const todolistsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Todolist"],
     }),
     removeTodolist: build.mutation<BaseResponse, string>({
-      query: (id) => ({
-        url: `todo-lists/${id}`,
-        method: "DELETE",
-      }),
+      query: (id) => {
+        return { url: `todo-lists/${"id"}`, method: "DELETE" }
+      },
+      async onQueryStarted(id, { queryFulfilled, dispatch, getState }) {
+        const patchResult = dispatch(
+          todolistsApi.util.updateQueryData("getTodolists", undefined, (state) => {
+            const index = state.findIndex((todo) => todo.id === id)
+            if (index !== -1) state.splice(index, 1)
+          }),
+        )
+
+        try {
+          await queryFulfilled
+        } catch (err) {
+          const state = getState()
+          const res = todolistsApi.endpoints.getTodolists.select()(state)
+          const isExist = res.data?.some((tl) => tl.id === id)
+          if (!isExist) {
+            patchResult.undo()
+          }
+        }
+      },
       invalidatesTags: ["Todolist"],
     }),
     updateTodolistTitle: build.mutation<BaseResponse, { id: string; title: string }>({
@@ -60,3 +78,11 @@ export const _todolistsApi = {
     return instance.delete<BaseResponse>(`/todo-lists/${id}`)
   },
 }
+
+
+// const state = getState()
+// const res = todolistsApi.endpoints.getTodolists.select()(state)
+// const exists = res.data?.some((todo) => todo.id === id)
+// if (!exists) {
+//   patchResult.undo()
+// }

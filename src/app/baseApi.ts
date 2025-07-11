@@ -18,5 +18,6 @@ export const baseApi = createApi({
 
     return result
   },
+  refetchOnReconnect: true,
   endpoints: () => ({}),
 })

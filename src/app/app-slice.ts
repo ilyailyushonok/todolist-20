@@ -6,7 +6,7 @@ import { createSlice, isFulfilled, isPending, isRejected } from "@reduxjs/toolki
 export const appSlice = createSlice({
   name: "app",
   initialState: {
-    themeMode: "light" as ThemeMode,
+    themeMode: "dark" as ThemeMode,
     status: "idle" as RequestStatus,
     error: null as string | null,
     isLoggedIn: false,
