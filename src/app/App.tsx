@@ -18,9 +18,7 @@ export const App = () => {
   const themeMode = useAppSelector(selectThemeMode)
 
   const { data, isLoading } = useMeQuery()
-
   const dispatch = useAppDispatch()
-
   const theme = getTheme(themeMode)
 
   useEffect(() => {

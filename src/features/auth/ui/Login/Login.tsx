@@ -3,7 +3,7 @@ import { AUTH_TOKEN } from "@/common/constants"
 import { ResultCode } from "@/common/enums"
 import { useAppDispatch, useAppSelector } from "@/common/hooks"
 import { getTheme } from "@/common/theme"
-import { useLoginMutation } from "@/features/auth/api/authApi"
+import { useCaptchaQuery, useLoginMutation } from "@/features/auth/api/authApi"
 import { type LoginInputs, loginSchema } from "@/features/auth/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Button from "@mui/material/Button"
@@ -46,6 +46,7 @@ export const Login = () => {
       }
     })
   }
+  const { data } = useCaptchaQuery()
 
   return (
     <Grid container justifyContent={"center"}>
@@ -92,6 +93,12 @@ export const Login = () => {
                 />
               }
             />
+            {data && (
+              <FormGroup>
+                <img src={data.url} alt={"CAPTCHA"} />
+                <TextField placeholder={"Enter Captcha"} />
+              </FormGroup>
+            )}
             <Button type="submit" variant="contained" color="primary">
               Login
             </Button>
