@@ -39,26 +39,26 @@ export const Login = () => {
       email: "",
       password: "",
       rememberMe: false,
+      captcha: ""
     },
   })
 
   const onSubmit: SubmitHandler<LoginInputs> = async (data) => {
     try {
       const res = await login(data).unwrap();
-      console.log(res)
       if (res.resultCode === ResultCode.Success) {
         dispatch(setIsLoggedInAC({ isLoggedIn: true }));
         localStorage.setItem(AUTH_TOKEN, res.data.token);
         reset();
       } else if (res.resultCode === ResultCode.CaptchaError) {
-        dispatch(setAppErrorAC({ error: "Неверная капча. Попробуйте снова." }));
+        dispatch(setAppErrorAC({ error: "Incorrect CAPTCHA. Please try again." }));
         refreshCaptcha();
         setValue("captcha", "");
       } else {
-        dispatch(setAppErrorAC({ error: res.messages[0] || "Произошла ошибка!" }));
+        dispatch(setAppErrorAC({ error: res.messages[0] ||  "An error occurred!" }));
       }
     } catch (error) {
-      dispatch(setAppErrorAC({ error: "Ошибка!" }));
+      dispatch(setAppErrorAC({ error:  "An error occurred!" }));
     }
   };
 
