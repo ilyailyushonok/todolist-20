@@ -1,9 +1,9 @@
-import { selectThemeMode, setIsLoggedInAC } from "@/app/app-slice"
+import { selectThemeMode, setAppErrorAC, setIsLoggedInAC } from "@/app/app-slice"
 import { AUTH_TOKEN } from "@/common/constants"
 import { ResultCode } from "@/common/enums"
 import { useAppDispatch, useAppSelector } from "@/common/hooks"
 import { getTheme } from "@/common/theme"
-import { useCaptchaQuery, useLoginMutation } from "@/features/auth/api/authApi"
+import { useGetCaptchaUrlQuery, useLoginMutation } from "@/features/auth/api/authApi"
 import { type LoginInputs, loginSchema } from "@/features/auth/lib/schemas"
 import { zodResolver } from "@hookform/resolvers/zod"
 import Button from "@mui/material/Button"
@@ -21,32 +21,48 @@ export const Login = () => {
   const themeMode = useAppSelector(selectThemeMode)
 
   const [login] = useLoginMutation()
+  const { data: captchaData, refetch: refreshCaptcha } = useGetCaptchaUrlQuery()
 
   const dispatch = useAppDispatch()
-
   const theme = getTheme(themeMode)
 
   const {
     register,
     handleSubmit,
+    setValue,
     reset,
     control,
     formState: { errors },
   } = useForm<LoginInputs>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: "", password: "", rememberMe: false },
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+      captcha: ""
+    },
   })
 
-  const onSubmit: SubmitHandler<LoginInputs> = (data) => {
-    login(data).then((res) => {
-      if (res.data?.resultCode === ResultCode.Success) {
-        dispatch(setIsLoggedInAC({ isLoggedIn: true }))
-        localStorage.setItem(AUTH_TOKEN, res.data.data.token)
-        reset()
+  const onSubmit: SubmitHandler<LoginInputs> = async (data) => {
+    try {
+      const res = await login(data).unwrap();
+      console.log(res)
+      if (res.resultCode === ResultCode.Success) {
+        dispatch(setIsLoggedInAC({ isLoggedIn: true }));
+        localStorage.setItem(AUTH_TOKEN, res.data.token);
+        reset();
+      } else if (res.resultCode === ResultCode.CaptchaError) {
+        dispatch(setAppErrorAC({ error: "Неверная капча. Попробуйте снова." }));
+        refreshCaptcha();
+        setValue("captcha", "");
+      } else {
+        dispatch(setAppErrorAC({ error: res.messages[0] || "Произошла ошибка!" }));
       }
-    })
-  }
-  const { data } = useCaptchaQuery()
+    } catch (error) {
+      dispatch(setAppErrorAC({ error: "Ошибка!" }));
+    }
+  };
+
 
   return (
     <Grid container justifyContent={"center"}>
@@ -73,32 +89,49 @@ export const Login = () => {
             </p>
           </FormLabel>
           <FormGroup>
-            <TextField label="Email" margin="normal" error={!!errors.email} {...register("email")} />
+            <TextField
+              label="Email"
+              margin="normal"
+              error={!!errors.email}
+              {...register("email")}
+            />
             {errors.email && <span className={styles.errorMessage}>{errors.email.message}</span>}
+
             <TextField
               type="password"
               label="Password"
               margin="normal"
-              error={!!errors.email}
+              error={!!errors.password}
               {...register("password")}
             />
             {errors.password && <span className={styles.errorMessage}>{errors.password.message}</span>}
+
             <FormControlLabel
               label={"Remember me"}
               control={
                 <Controller
                   name={"rememberMe"}
                   control={control}
-                  render={({ field: { value, ...field } }) => <Checkbox {...field} checked={value} />}
+                  render={({ field: { value, ...field } }) => (
+                    <Checkbox {...field} checked={value} />
+                  )}
                 />
               }
             />
-            {data && (
+
+            {captchaData && (
               <FormGroup>
-                <img src={data.url} alt={"CAPTCHA"} />
-                <TextField placeholder={"Enter Captcha"} />
+                <img src={captchaData.url} alt="CAPTCHA" />
+                <TextField
+                  label="Captcha"
+                  margin="normal"
+                  error={!!errors.captcha}
+                  {...register("captcha")}
+                  helperText={errors.captcha?.message}
+                />
               </FormGroup>
             )}
+
             <Button type="submit" variant="contained" color="primary">
               Login
             </Button>
