@@ -5,9 +5,19 @@ import react from "@vitejs/plugin-react-swc"
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: "/todolist-20/",
   resolve: {
     alias: {
       "@/": `${path.resolve(__dirname, "src")}/`,
+    },
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://social-network.samuraijs.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
   },
 })

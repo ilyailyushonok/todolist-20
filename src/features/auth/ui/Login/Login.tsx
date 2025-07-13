@@ -39,7 +39,6 @@ export const Login = () => {
       email: "",
       password: "",
       rememberMe: false,
-      captcha: ""
     },
   })
 
